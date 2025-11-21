@@ -15,7 +15,7 @@ export default function DateHistory() {
     try {
       setLoading(true);
       const [datesData, categoriesData] = await Promise.all([
-        api.getDates({ isUsed: true }),
+        api.getDates({ status: 'completed' }),
         api.getCategories(),
       ]);
       setUsedDates(datesData);
@@ -31,7 +31,7 @@ export default function DateHistory() {
     if (!confirm('Reset this date back to available pool?')) return;
 
     try {
-      await api.updateDate(id, { isUsed: false });
+      await api.updateDate(id, { status: 'idle', scheduledDate: null });
       loadData();
     } catch (error) {
       console.error('Error resetting date:', error);

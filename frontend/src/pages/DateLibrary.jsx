@@ -13,7 +13,7 @@ export default function DateLibrary() {
   const [filters, setFilters] = useState({
     category: '',
     author: '',
-    isUsed: '',
+    status: '',
   });
   
   const [showDateModal, setShowDateModal] = useState(false);
@@ -129,13 +129,14 @@ export default function DateLibrary() {
               Status
             </label>
             <select
-              value={filters.isUsed}
-              onChange={(e) => setFilters({ ...filters, isUsed: e.target.value })}
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="input-field"
             >
               <option value="">All</option>
-              <option value="false">Available</option>
-              <option value="true">Used</option>
+              <option value="idle">Available</option>
+              <option value="planned">Scheduled</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
         </div>
@@ -194,9 +195,14 @@ export default function DateLibrary() {
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
                     {date.author}
                   </span>
-                  {date.isUsed && (
+                  {date.status === 'planned' && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                      Scheduled
+                    </span>
+                  )}
+                  {date.status === 'completed' && (
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
-                      Used
+                      Completed
                     </span>
                   )}
                 </div>

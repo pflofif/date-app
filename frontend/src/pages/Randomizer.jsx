@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shuffle, Check, X, Sparkles } from 'lucide-react';
 import { api } from '../utils/api';
+import ScheduleDateModal from '../components/ScheduleDateModal';
 
 export default function Randomizer() {
   const [categories, setCategories] = useState([]);
@@ -8,6 +9,7 @@ export default function Randomizer() {
   const [randomDate, setRandomDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   useEffect(() => {
     loadCategories();
@@ -56,15 +58,22 @@ export default function Randomizer() {
 
   const handleAccept = async () => {
     if (!randomDate) return;
+    setShowScheduleModal(true);
+  };
 
+  const handleSchedule = async (scheduledDateTime) => {
     try {
-      await api.updateDate(randomDate.id, { isUsed: true });
-      alert('Great! This date has been marked as used and moved to history.');
+      await api.updateDate(randomDate.id, { 
+        status: 'planned',
+        scheduledDate: scheduledDateTime
+      });
+      alert('Date scheduled successfully!');
       setRandomDate(null);
       setSelectedCategories([]);
+      setShowScheduleModal(false);
     } catch (error) {
-      console.error('Error accepting date:', error);
-      alert('Failed to mark date as used');
+      console.error('Error scheduling date:', error);
+      alert('Failed to schedule date');
     }
   };
 
@@ -174,7 +183,7 @@ export default function Randomizer() {
               className="btn-primary flex items-center justify-center gap-2 flex-1 sm:flex-initial"
             >
               <Check className="w-5 h-5" />
-              Accept & Mark as Used
+              Schedule This Date
             </button>
             <button
               onClick={handleReroll}
@@ -185,6 +194,14 @@ export default function Randomizer() {
             </button>
           </div>
         </div>
+      )}
+
+      {showScheduleModal && randomDate && (
+        <ScheduleDateModal
+          date={randomDate}
+          onSchedule={handleSchedule}
+          onClose={() => setShowScheduleModal(false)}
+        />
       )}
     </div>
   );

@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { Heart, BookHeart, Shuffle, History, Menu, X } from 'lucide-react';
+import { Heart, BookHeart, Shuffle, History, CalendarClock } from 'lucide-react';
 import DateLibrary from './pages/DateLibrary';
 import Randomizer from './pages/Randomizer';
 import DateHistory from './pages/DateHistory';
+import UpcomingDates from './pages/UpcomingDates';
 import { UserContext, useUser } from './context/UserContext';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
             <Routes>
               <Route path="/" element={<DateLibrary />} />
               <Route path="/randomizer" element={<Randomizer />} />
+              <Route path="/upcoming" element={<UpcomingDates />} />
               <Route path="/history" element={<DateHistory />} />
             </Routes>
           </main>
@@ -66,6 +68,7 @@ function BottomNav() {
   const navItems = [
     { path: '/', icon: BookHeart, label: 'Library' },
     { path: '/randomizer', icon: Shuffle, label: 'Spin' },
+    { path: '/upcoming', icon: CalendarClock, label: 'Upcoming' },
     { path: '/history', icon: History, label: 'History' },
   ];
 

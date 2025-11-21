@@ -41,7 +41,7 @@ export const api = {
     const params = new URLSearchParams();
     if (filters.category) params.append('category', filters.category);
     if (filters.author) params.append('author', filters.author);
-    if (filters.isUsed !== undefined) params.append('isUsed', filters.isUsed);
+    if (filters.status) params.append('status', filters.status);
     
     const res = await fetch(`${API_URL}/dates?${params}`);
     if (!res.ok) throw new Error('Failed to fetch dates');

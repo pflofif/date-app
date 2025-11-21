@@ -34,6 +34,23 @@ async function initDB() {
     db.data.dates = [];
   }
   
+  // Migrate old data: convert isUsed to status
+  let needsWrite = false;
+  if (db.data.dates && db.data.dates.length > 0) {
+    db.data.dates = db.data.dates.map(date => {
+      if (date.isUsed !== undefined && date.status === undefined) {
+        needsWrite = true;
+        const { isUsed, ...rest } = date;
+        return {
+          ...rest,
+          status: isUsed ? 'completed' : 'idle',
+          scheduledDate: null
+        };
+      }
+      return date;
+    });
+  }
+  
   // Seed default categories if empty
   if (db.data.categories.length === 0) {
     db.data.categories = [
@@ -49,6 +66,10 @@ async function initDB() {
       { id: uuidv4(), name: 'Short Trip', type: 'Trip' },
       { id: uuidv4(), name: 'Other Outings', type: 'Outdoors' }
     ];
+    needsWrite = true;
+  }
+  
+  if (needsWrite) {
     await db.write();
   }
 }
@@ -156,10 +177,20 @@ app.get('/api/dates', async (req, res) => {
       dates = dates.filter(d => d.author === req.query.author);
     }
     
-    // Filter by used status
+    // Filter by status
+    if (req.query.status) {
+      dates = dates.filter(d => d.status === req.query.status);
+    }
+    
+    // Legacy: Filter by isUsed (for backward compatibility)
     if (req.query.isUsed !== undefined) {
       const isUsed = req.query.isUsed === 'true';
-      dates = dates.filter(d => d.isUsed === isUsed);
+      dates = dates.filter(d => {
+        if (d.status) {
+          return isUsed ? (d.status === 'completed') : (d.status === 'idle' || d.status === 'planned');
+        }
+        return d.isUsed === isUsed;
+      });
     }
     
     res.json(dates);
@@ -205,7 +236,8 @@ app.post('/api/dates', async (req, res) => {
       description: description || '',
       category,
       subCategory: subCategory || null,
-      isUsed: false,
+      status: 'idle',
+      scheduledDate: null,
       author,
       createdAt: new Date().toISOString()
     };
@@ -278,7 +310,10 @@ app.post('/api/dates/random', async (req, res) => {
     
     await db.read();
     const availableDates = db.data.dates.filter(
-      d => !d.isUsed && categories.includes(d.category)
+      d => {
+        const isIdle = d.status ? d.status === 'idle' : !d.isUsed;
+        return isIdle && categories.includes(d.category);
+      }
     );
     
     if (availableDates.length === 0) {
