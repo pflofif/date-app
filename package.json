@@ -1,0 +1,15 @@
+{
+  "name": "couples-date-randomizer",
+  "version": "1.0.0",
+  "description": "A mobile-first web app for couples to track and randomly select date ideas",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down"
+  },
+  "keywords": ["date", "randomizer", "couple", "react", "express"],
+  "author": "",
+  "license": "MIT"
+}

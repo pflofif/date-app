@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: date-randomizer-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/db.json:/app/db.json
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    networks:
+      - date-app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: date-randomizer-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - date-app-network
+
+networks:
+  date-app-network:
+    driver: bridge
+
+volumes:
+  db-data:
