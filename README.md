@@ -220,6 +220,15 @@ If ports 3000 or 8080 are already in use:
 
 ## Development
 
+## Local Development Method
+
+1. Install Node.js from https://nodejs.org/
+2. Open terminal in the project folder
+3. Run: `npm run install:all`
+4. Start backend: `npm run dev:backend` (in one terminal)
+5. Start frontend: `npm run dev:frontend` (in another terminal)
+6. Open browser to http://localhost:5173
+
 ### Hot Reload
 When running locally (not Docker), both frontend and backend support hot reload:
 - Frontend: Vite auto-reloads on file changes
