@@ -107,4 +107,35 @@ export const api = {
     }
     return res.json();
   },
+
+  // Auth
+  login: async (username, password) => {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to login');
+    }
+    return res.json();
+  },
+
+  // Settings
+  getSettings: async () => {
+    const res = await fetch(`${API_URL}/settings`);
+    if (!res.ok) throw new Error('Failed to fetch settings');
+    return res.json();
+  },
+
+  updateSettings: async (settings) => {
+    const res = await fetch(`${API_URL}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    if (!res.ok) throw new Error('Failed to update settings');
+    return res.json();
+  },
 };

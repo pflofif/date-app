@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Shuffle, Check, X, Sparkles } from 'lucide-react';
 import { api } from '../utils/api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 import ScheduleDateModal from '../components/ScheduleDateModal';
 
 export default function Randomizer() {
+  const { t, getLocalizedField } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [randomDate, setRandomDate] = useState(null);
@@ -36,7 +38,7 @@ export default function Randomizer() {
 
   const handleSpin = async () => {
     if (selectedCategories.length === 0) {
-      showWarning('Please select at least one category');
+      showWarning(t('errors.selectAtLeastOneCategory'));
       return;
     }
 
@@ -50,7 +52,7 @@ export default function Randomizer() {
         const date = await api.getRandomDate(selectedCategories);
         setRandomDate(date);
       } catch (error) {
-        showError(error.message || 'No available dates found with selected categories');
+        showError(t('errors.noAvailableDates'));
       } finally {
         setLoading(false);
         setSpinning(false);
@@ -69,13 +71,13 @@ export default function Randomizer() {
         status: 'planned',
         scheduledDate: scheduledDateTime
       });
-      showSuccess('Date scheduled successfully!');
+      showSuccess(t('toast.dateScheduledSuccess'));
       setRandomDate(null);
       setSelectedCategories([]);
       setShowScheduleModal(false);
     } catch (error) {
       console.error('Error scheduling date:', error);
-      showError('Failed to schedule date');
+      showError(t('errors.failedToSchedule'));
     }
   };
 
@@ -89,8 +91,8 @@ export default function Randomizer() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Date Randomizer</h2>
-        <p className="text-gray-600">Select categories and spin for a surprise!</p>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('randomizer.title')}</h2>
+        <p className="text-gray-600">{t('randomizer.selectCategories')}</p>
       </div>
 
       {!randomDate ? (
@@ -98,7 +100,7 @@ export default function Randomizer() {
           {/* Category Selection */}
           <div className="card mb-6">
             <h3 className="font-semibold text-lg mb-4 text-gray-900">
-              Select Categories
+              {t('randomizer.selectCategoriesPlaceholder')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {categories.map((cat) => (
@@ -106,13 +108,13 @@ export default function Randomizer() {
                   key={cat.id}
                   onClick={() => toggleCategory(cat.id)}
                   className={`p-4 rounded-lg border-2 transition-all text-left ${selectedCategories.includes(cat.id)
-                      ? 'border-primary-600 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary-600 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-gray-900">{cat.name}</div>
+                      <div className="font-medium text-gray-900">{getLocalizedField(cat, 'name')}</div>
                       <div className="text-sm text-gray-500">{cat.type}</div>
                     </div>
                     {selectedCategories.includes(cat.id) && (
@@ -134,17 +136,17 @@ export default function Randomizer() {
               {spinning ? (
                 <>
                   <Sparkles className="w-6 h-6 animate-spin" />
-                  Spinning...
+                  {t('randomizer.spinning')}
                 </>
               ) : (
                 <>
                   <Shuffle className="w-6 h-6" />
-                  Spin the Wheel!
+                  {t('randomizer.spinTheWheel')}
                 </>
               )}
             </button>
             <p className="text-sm text-gray-500 mt-3">
-              {selectedCategories.length} {selectedCategories.length === 1 ? 'category' : 'categories'} selected
+              {selectedCategories.length} {selectedCategories.length === 1 ? t('randomizer.categorySelected') : t('randomizer.categoriesSelected')}
             </p>
           </div>
         </>
@@ -154,26 +156,26 @@ export default function Randomizer() {
           <div className="mb-4">
             <Sparkles className="w-12 h-12 text-primary-600 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              {randomDate.title}
+              {getLocalizedField(randomDate, 'title')}
             </h3>
 
-            {randomDate.description && (
+            {getLocalizedField(randomDate, 'description') && (
               <p className="text-gray-600 mb-4 whitespace-pre-wrap">
-                {randomDate.description}
+                {getLocalizedField(randomDate, 'description')}
               </p>
             )}
 
             <div className="flex flex-wrap gap-2 justify-center mb-6">
               <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
-                {category?.name || 'Unknown'}
+                {getLocalizedField(category, 'name') || t('categoryModal.other')}
               </span>
-              {randomDate.subCategory && (
+              {getLocalizedField(randomDate, 'subCategory') && (
                 <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
-                  {randomDate.subCategory}
+                  {getLocalizedField(randomDate, 'subCategory')}
                 </span>
               )}
               <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                By {randomDate.author}
+                {randomDate.author}
               </span>
             </div>
           </div>
@@ -184,14 +186,14 @@ export default function Randomizer() {
               className="btn-primary flex items-center justify-center gap-2 flex-1 sm:flex-initial"
             >
               <Check className="w-5 h-5" />
-              Schedule This Date
+              {t('randomizer.scheduleThisDate')}
             </button>
             <button
               onClick={handleReroll}
               className="btn-secondary flex items-center justify-center gap-2 flex-1 sm:flex-initial"
             >
               <Shuffle className="w-5 h-5" />
-              Reroll
+              {t('randomizer.reroll')}
             </button>
           </div>
         </div>

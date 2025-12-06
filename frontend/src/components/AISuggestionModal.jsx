@@ -3,9 +3,12 @@ import { X, Sparkles, Loader2, RefreshCw, Plus } from 'lucide-react';
 import { api } from '../utils/api';
 import { useUser } from '../context/UserContext';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
+import { translateToBothLanguages } from '../utils/translate';
 
 export default function AISuggestionModal({ categories, onClose, onSelectDate, onDatesAdded }) {
   const { currentUser } = useUser();
+  const { t, language, getLocalizedField } = useLanguage();
   const { showSuccess, showError, showWarning } = useToast();
   const [formData, setFormData] = useState({
     mood: '',
@@ -22,38 +25,36 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
   const [addingDates, setAddingDates] = useState(false);
 
   const moods = [
-    { value: 'romantic', label: '💕 Romantic' },
-    { value: 'adventurous', label: '🎢 Adventurous' },
-    { value: 'relaxed', label: '😌 Relaxed' },
-    { value: 'playful', label: '🎮 Playful' },
-    { value: 'creative', label: '🎨 Creative' },
-    { value: 'hungry', label: '🍽️ Foodie' },
+    { value: 'romantic', label: t('moods.romantic') },
+    { value: 'adventurous', label: t('moods.adventurous') },
+    { value: 'relaxed', label: t('moods.relaxed') },
+    { value: 'playful', label: t('moods.playful') },
+    { value: 'creative', label: t('moods.creative') },
+    { value: 'hungry', label: t('moods.foodie') },
   ];
 
   const activityLevels = [
-    { value: 'low', label: '😴 Just chilling', description: 'Low energy, cozy vibes' },
-    { value: 'moderate', label: '😊 Normal day', description: 'Balanced energy' },
-    { value: 'high', label: '⚡ Let\'s go!', description: 'High energy, exciting' },
+    { value: 'low', label: t('activityLevels.justChilling'), description: t('activityLevels.lowEnergy') },
+    { value: 'moderate', label: t('activityLevels.normalDay'), description: t('activityLevels.balancedEnergy') },
+    { value: 'high', label: t('activityLevels.letsGo'), description: t('activityLevels.highEnergy') },
   ];
 
   const budgets = [
-    { value: 'free', label: '🆓 Free' },
-    { value: 'low', label: '💰 Budget-friendly' },
-    { value: 'moderate', label: '💵 Moderate' },
-    { value: 'high', label: '💎 Go big!' },
+    { value: 'free', label: t('budgets.free') },
+    { value: 'low', label: t('budgets.budgetFriendly') },
+    { value: 'moderate', label: t('budgets.moderate') },
+    { value: 'high', label: t('budgets.goBig') },
   ];
 
   const settings = [
-    { value: 'home', label: '🏡 Home' },
-    { value: 'outdoors', label: '🌳 Outside' },
-    { value: 'any', label: '🌍 Anywhere' },
+    { value: 'home', label: t('aiModal.homeSetting') },
+    { value: 'outdoors', label: t('aiModal.outside') },
+    { value: 'any', label: t('aiModal.anywhere') },
   ];
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleGetSuggestions = async () => {
     if (!formData.mood) {
-      setError('Pick a mood to get started!');
+      setError(t('errors.selectMood'));
       return;
     }
 
@@ -62,15 +63,18 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
     setSuggestions(null);
 
     try {
-      const result = await api.getAISuggestion({
+      const preferences = {
         ...formData,
-        categories: categories.map(c => ({ id: c.id, name: c.name, type: c.type })),
-      });
+        categories: categories.map(c => ({ id: c.id, name: getLocalizedField(c, 'name'), type: c.type })),
+        language // Pass current language to backend for AI response
+      };
+
+      const result = await api.getAISuggestion(preferences);
       setSuggestions(result);
       setSelectedSuggestions(new Set());
     } catch (err) {
       console.error('AI suggestion error:', err);
-      setError(err.message || 'Failed to get suggestions. Try again?');
+      setError(err.message || t('errors.failedToCreate'));
     } finally {
       setLoading(false);
     }
@@ -93,7 +97,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
 
   const handleAddSelectedDates = async () => {
     if (selectedSuggestions.size === 0) {
-      showWarning('Pick at least one date to add');
+      showWarning(t('errors.pickAtLeastOne'));
       return;
     }
 
@@ -119,16 +123,23 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
           if (matchingCategory) categoryId = matchingCategory.id;
         }
 
+        // Auto-translate title and description
+        const titleTranslations = await translateToBothLanguages(suggestion.title);
+        const descriptionTranslations = await translateToBothLanguages(suggestion.description || '');
+
         await api.createDate({
-          title: suggestion.title,
-          description: suggestion.description || '',
+          title_en: titleTranslations.en,
+          title_uk: titleTranslations.uk,
+          description_en: descriptionTranslations.en,
+          description_uk: descriptionTranslations.uk,
           category: categoryId,
-          subCategory: '',
+          subCategory_en: '',
+          subCategory_uk: '',
           author: currentUser,
         });
       }
 
-      showSuccess(`Added ${selectedItems.length} date${selectedItems.length !== 1 ? 's' : ''}!`);
+      showSuccess(`${selectedItems.length} ${t('toast.datesAdded')}`);
       setSelectedSuggestions(new Set());
       setSuggestions(null);
 
@@ -139,7 +150,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
       onClose();
     } catch (error) {
       console.error('Error adding dates:', error);
-      showError('Oops, couldn\'t add those. Try again?');
+      showError(t('errors.failedToAdd'));
     } finally {
       setAddingDates(false);
     }
@@ -163,7 +174,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
         <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-pink-500 px-4 sm:px-6 py-4 flex items-center justify-between rounded-t-2xl flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <Sparkles className="w-5 h-5 text-white flex-shrink-0" />
-            <h3 className="text-lg sm:text-xl font-bold text-white truncate">AI Date Suggester</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-white truncate">{t('aiModal.title')}</h3>
           </div>
           <button
             onClick={onClose}
@@ -176,9 +187,9 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           {!suggestions ? (
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5">
+            <form onSubmit={(e) => { e.preventDefault(); handleGetSuggestions(); }} className="p-4 sm:p-6 space-y-5">
               <p className="text-gray-600 text-sm">
-                Tell us what you're feeling, and we'll find the perfect date 💭
+                {t('aiModal.tellUsYourFeeling')}
               </p>
 
               {error && (
@@ -190,7 +201,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
               {/* Mood */}
               <fieldset>
                 <legend className="block text-sm font-semibold text-gray-900 mb-3">
-                  What's your vibe? *
+                  {t('aiModal.whatsYourVibe')} *
                 </legend>
                 <div className="grid grid-cols-3 gap-2">
                   {moods.map((mood) => (
@@ -199,8 +210,8 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                       type="button"
                       onClick={() => setFormData({ ...formData, mood: mood.value })}
                       className={`p-3 rounded-lg text-center text-sm font-medium transition-all ${formData.mood === mood.value
-                          ? 'bg-primary-100 border-2 border-primary-600 text-primary-900'
-                          : 'bg-gray-100 border-2 border-transparent hover:bg-gray-200 text-gray-700'
+                        ? 'bg-primary-100 border-2 border-primary-600 text-primary-900'
+                        : 'bg-gray-100 border-2 border-transparent hover:bg-gray-200 text-gray-700'
                         }`}
                     >
                       <div className="text-lg mb-1">{mood.label.split(' ')[0]}</div>
@@ -213,15 +224,15 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
               {/* Energy Level */}
               <fieldset>
                 <legend className="block text-sm font-semibold text-gray-900 mb-3">
-                  How's your energy?
+                  {t('aiModal.howsYourEnergy')}
                 </legend>
                 <div className="space-y-2">
                   {activityLevels.map((level) => (
                     <label
                       key={level.value}
                       className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.activityLevel === level.value
-                          ? 'bg-primary-50 border-primary-600'
-                          : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                        ? 'bg-primary-50 border-primary-600'
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <input
@@ -244,7 +255,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
               {/* Budget */}
               <fieldset>
                 <legend className="block text-sm font-semibold text-gray-900 mb-3">
-                  Budget
+                  {t('aiModal.budget')}
                 </legend>
                 <div className="grid grid-cols-2 gap-2">
                   {budgets.map((budget) => (
@@ -253,8 +264,8 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                       type="button"
                       onClick={() => setFormData({ ...formData, budget: budget.value })}
                       className={`p-3 rounded-lg text-sm font-medium transition-all text-center ${formData.budget === budget.value
-                          ? 'bg-primary-100 border-2 border-primary-600 text-primary-900'
-                          : 'bg-gray-100 border-2 border-transparent hover:bg-gray-200 text-gray-700'
+                        ? 'bg-primary-100 border-2 border-primary-600 text-primary-900'
+                        : 'bg-gray-100 border-2 border-transparent hover:bg-gray-200 text-gray-700'
                         }`}
                     >
                       <div>{budget.label.split(' ')[0]}</div>
@@ -267,7 +278,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
               {/* Setting */}
               <fieldset>
                 <legend className="block text-sm font-semibold text-gray-900 mb-3">
-                  Where?
+                  {t('aiModal.where')}
                 </legend>
                 <div className="grid grid-cols-3 gap-2">
                   {settings.map((setting) => (
@@ -276,8 +287,8 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                       type="button"
                       onClick={() => setFormData({ ...formData, setting: setting.value })}
                       className={`p-3 rounded-lg text-sm font-medium transition-all text-center ${formData.setting === setting.value
-                          ? 'bg-primary-100 border-2 border-primary-600 text-primary-900'
-                          : 'bg-gray-100 border-2 border-transparent hover:bg-gray-200 text-gray-700'
+                        ? 'bg-primary-100 border-2 border-primary-600 text-primary-900'
+                        : 'bg-gray-100 border-2 border-transparent hover:bg-gray-200 text-gray-700'
                         }`}
                     >
                       <div className="text-lg mb-1">{setting.label.split(' ')[0]}</div>
@@ -290,28 +301,28 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
               {/* Interests */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Interests (optional)
+                  {t('aiModal.interests')}
                 </label>
                 <input
                   type="text"
                   value={formData.interests}
                   onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
                   className="input-field text-sm"
-                  placeholder="e.g., nature, music, food..."
+                  placeholder={language === 'uk' ? "напр., природа, музика, їжа..." : "e.g., nature, music, food..."}
                 />
               </div>
 
               {/* Special Occasion */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Special occasion? (optional)
+                  {t('aiModal.specialOccasion')}
                 </label>
                 <input
                   type="text"
                   value={formData.specialOccasion}
                   onChange={(e) => setFormData({ ...formData, specialOccasion: e.target.value })}
                   className="input-field text-sm"
-                  placeholder="e.g., anniversary, birthday..."
+                  placeholder={language === 'uk' ? "напр., річниця, день народження..." : "e.g., anniversary, birthday..."}
                 />
               </div>
 
@@ -323,12 +334,12 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Finding ideas...</span>
+                    <span>{t('aiModal.findingIdeas')}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    <span>Get Suggestions</span>
+                    <span>{t('aiModal.getSuggestions')}</span>
                   </>
                 )}
               </button>
@@ -336,13 +347,13 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
           ) : (
             <div className="p-4 sm:p-6 space-y-4">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-gray-900">Ideas for you</h4>
+                <h4 className="font-semibold text-gray-900">{t('aiModal.ideasForYou')}</h4>
                 <button
                   onClick={handleReset}
                   className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1 font-medium"
                 >
                   <RefreshCw className="w-3 h-3" />
-                  New search
+                  {t('aiModal.newSearch')}
                 </button>
               </div>
 
@@ -358,18 +369,18 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                     key={index}
                     onClick={() => toggleSuggestionSelection(index)}
                     className={`border rounded-xl p-4 transition-all ${suggestion.isFromLibrary
-                        ? 'cursor-not-allowed opacity-60 border-gray-200 bg-gray-50'
-                        : selectedSuggestions.has(index)
-                          ? 'cursor-pointer border-primary-500 bg-primary-50 shadow-md'
-                          : 'cursor-pointer border-gray-200 hover:border-primary-300 hover:shadow-sm active:bg-primary-50/30'
+                      ? 'cursor-not-allowed opacity-60 border-gray-200 bg-gray-50'
+                      : selectedSuggestions.has(index)
+                        ? 'cursor-pointer border-primary-500 bg-primary-50 shadow-md'
+                        : 'cursor-pointer border-gray-200 hover:border-primary-300 hover:shadow-sm active:bg-primary-50/30'
                       }`}
                   >
                     <div className="flex items-start gap-3">
                       {!suggestion.isFromLibrary && (
                         <div
                           className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all mt-1 ${selectedSuggestions.has(index)
-                              ? 'border-primary-500 bg-primary-500'
-                              : 'border-gray-300'
+                            ? 'border-primary-500 bg-primary-500'
+                            : 'border-gray-300'
                             }`}
                         >
                           {selectedSuggestions.has(index) && (
@@ -391,12 +402,12 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                         <div className="mt-2">
                           {suggestion.isFromLibrary && (
                             <span className="inline-block text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                              In your library
+                              {t('aiModal.inYourLibrary')}
                             </span>
                           )}
                           {!suggestion.isFromLibrary && (
                             <span className="inline-block text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                              ✚ New
+                              {t('aiModal.new')}
                             </span>
                           )}
                         </div>
@@ -415,12 +426,12 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                   {addingDates ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Adding...</span>
+                      <span>{t('aiModal.adding')}</span>
                     </>
                   ) : (
                     <>
                       <Plus className="w-5 h-5" />
-                      <span>Add {selectedNewDatesCount} {selectedNewDatesCount === 1 ? 'Date' : 'Dates'}</span>
+                      <span>{t('aiModal.addDates')} {selectedNewDatesCount}</span>
                     </>
                   )}
                 </button>
@@ -428,8 +439,8 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
 
               {newDatesCount === 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 text-center">
-                  <p className="font-medium">Great collection! 🎉</p>
-                  <p className="text-xs mt-1">All suggestions are already in your library</p>
+                  <p className="font-medium">{t('aiModal.greatCollection')}</p>
+                  <p className="text-xs mt-1">{t('aiModal.allInLibrary')}</p>
                 </div>
               )}
 
@@ -437,7 +448,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
                 onClick={onClose}
                 className="w-full btn-secondary py-2 text-sm font-medium"
               >
-                Close
+                {t('aiModal.close')}
               </button>
             </div>
           )}

@@ -7,11 +7,26 @@ import Randomizer from './pages/Randomizer';
 import DateHistory from './pages/DateHistory';
 import UpcomingDates from './pages/UpcomingDates';
 import AISuggestionModal from './components/AISuggestionModal';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import { UserContext, useUser } from './context/UserContext';
 import { ToastProvider } from './context/ToastContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { api } from './utils/api';
+import './i18n'; // Initialize i18n
 
 function App() {
+  return (
+    <LanguageProvider>
+      <UserContext.Provider value={{ currentUser: 'User 1', setCurrentUser: () => { } }}>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </UserContext.Provider>
+    </LanguageProvider>
+  );
+}
+
+function AppContent() {
   const [currentUser, setCurrentUser] = useState('User 1');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -70,40 +85,39 @@ function App() {
 
   return (
     <UserContext.Provider value={{ currentUser, setCurrentUser }}>
-      <ToastProvider>
-        <Router>
-          <div className="min-h-screen flex flex-col">
-            <Header
-              mobileMenuOpen={mobileMenuOpen}
-              setMobileMenuOpen={setMobileMenuOpen}
-              onOpenAI={() => setShowAIModal(true)}
-            />
-            <main className="flex-1 pb-20 md:pb-8">
-              <Routes>
-                <Route path="/" element={<DateLibrary key={refreshTrigger} />} />
-                <Route path="/randomizer" element={<Randomizer />} />
-                <Route path="/upcoming" element={<UpcomingDates />} />
-                <Route path="/history" element={<DateHistory />} />
-              </Routes>
-            </main>
-            <BottomNav onOpenAI={() => setShowAIModal(true)} />
-          </div>
+      <Router>
+        <div className="min-h-screen flex flex-col">
+          <Header
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            onOpenAI={() => setShowAIModal(true)}
+          />
+          <main className="flex-1 pb-20 md:pb-8">
+            <Routes>
+              <Route path="/" element={<DateLibrary key={refreshTrigger} />} />
+              <Route path="/randomizer" element={<Randomizer />} />
+              <Route path="/upcoming" element={<UpcomingDates />} />
+              <Route path="/history" element={<DateHistory />} />
+            </Routes>
+          </main>
+          <BottomNav onOpenAI={() => setShowAIModal(true)} />
+        </div>
 
-          {showAIModal && (
-            <AISuggestionModal
-              categories={categories}
-              onClose={() => setShowAIModal(false)}
-              onDatesAdded={handleDatesAdded}
-            />
-          )}
-        </Router>
-      </ToastProvider>
+        {showAIModal && (
+          <AISuggestionModal
+            categories={categories}
+            onClose={() => setShowAIModal(false)}
+            onDatesAdded={handleDatesAdded}
+          />
+        )}
+      </Router>
     </UserContext.Provider>
   );
 }
 
 function Header({ mobileMenuOpen, setMobileMenuOpen, onOpenAI }) {
   const { currentUser, setCurrentUser } = useUser();
+  const { t } = useLanguage();
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -111,24 +125,25 @@ function Header({ mobileMenuOpen, setMobileMenuOpen, onOpenAI }) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <Heart className="w-6 h-6 text-primary-600 fill-primary-600" />
-            <h1 className="text-xl font-bold text-gray-900">Date Night</h1>
+            <h1 className="text-xl font-bold text-gray-900">{t('header.appName')}</h1>
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <button
               onClick={onOpenAI}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary-600 to-pink-500 text-white rounded-lg text-sm font-medium hover:from-primary-700 hover:to-pink-600 transition-all shadow-sm"
             >
               <Sparkles className="w-4 h-4" />
-              AI Suggest
+              {t('header.aiSuggest')}
             </button>
             <select
               value={currentUser}
               onChange={(e) => setCurrentUser(e.target.value)}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
             >
-              <option value="User 1">User 1</option>
-              <option value="User 2">User 2</option>
+              <option value="User 1">{t('header.user1')}</option>
+              <option value="User 2">{t('header.user2')}</option>
             </select>
           </div>
         </div>
@@ -139,13 +154,14 @@ function Header({ mobileMenuOpen, setMobileMenuOpen, onOpenAI }) {
 
 function BottomNav({ onOpenAI }) {
   const location = useLocation();
+  const { t } = useLanguage();
 
   const navItems = [
-    { path: '/', icon: BookHeart, label: 'Library' },
-    { path: '/randomizer', icon: Shuffle, label: 'Spin' },
-    { path: 'ai', icon: Sparkles, label: 'AI', isAction: true },
-    { path: '/upcoming', icon: CalendarClock, label: 'Upcoming' },
-    { path: '/history', icon: History, label: 'History' },
+    { path: '/', icon: BookHeart, label: t('nav.library') },
+    { path: '/randomizer', icon: Shuffle, label: t('nav.spin') },
+    { path: 'ai', icon: Sparkles, label: t('nav.ai'), isAction: true },
+    { path: '/upcoming', icon: CalendarClock, label: t('nav.upcoming') },
+    { path: '/history', icon: History, label: t('nav.history') },
   ];
 
   return (
