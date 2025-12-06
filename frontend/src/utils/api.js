@@ -42,7 +42,7 @@ export const api = {
     if (filters.category) params.append('category', filters.category);
     if (filters.author) params.append('author', filters.author);
     if (filters.status) params.append('status', filters.status);
-    
+
     const res = await fetch(`${API_URL}/dates?${params}`);
     if (!res.ok) throw new Error('Failed to fetch dates');
     return res.json();
@@ -91,6 +91,19 @@ export const api = {
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.error || 'Failed to get random date');
+    }
+    return res.json();
+  },
+
+  getAISuggestion: async (preferences) => {
+    const res = await fetch(`${API_URL}/dates/ai-suggest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preferences),
+    });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to get AI suggestions');
     }
     return res.json();
   },
