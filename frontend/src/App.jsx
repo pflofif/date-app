@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Heart, BookHeart, Shuffle, History, CalendarClock, Sparkles } from 'lucide-react';
+import * as DarkReader from 'darkreader';
 import DateLibrary from './pages/DateLibrary';
 import Randomizer from './pages/Randomizer';
 import DateHistory from './pages/DateHistory';
@@ -19,6 +20,38 @@ function App() {
 
   useEffect(() => {
     loadCategories();
+
+    // Initialize dark mode based on system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (prefersDark) {
+      DarkReader.enable({
+        brightness: 100,
+        contrast: 90,
+        sepia: 0,
+      });
+    }
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e) => {
+      if (e.matches) {
+        DarkReader.enable({
+          brightness: 100,
+          contrast: 90,
+          sepia: 0,
+        });
+      } else {
+        DarkReader.disable();
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleThemeChange);
+
+    // Cleanup
+    return () => {
+      mediaQuery.removeEventListener('change', handleThemeChange);
+    };
   }, []);
 
   const loadCategories = async () => {
