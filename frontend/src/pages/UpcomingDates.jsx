@@ -4,6 +4,7 @@ import { api } from '../utils/api';
 import { useToast } from '../context/ToastContext';
 import ScheduleDateModal from '../components/ScheduleDateModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { addToGoogleCalendar, initializeGoogleCalendar } from '../utils/googleCalendar';
 
 export default function UpcomingDates() {
   const [plannedDates, setPlannedDates] = useState([]);
@@ -17,10 +18,12 @@ export default function UpcomingDates() {
     dateId: null,
     dateTitle: ''
   });
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
 
   useEffect(() => {
     loadData();
+    // Initialize Google Calendar API
+    initializeGoogleCalendar().catch(console.error);
   }, []);
 
   const loadData = async () => {
@@ -87,12 +90,26 @@ export default function UpcomingDates() {
     setShowScheduleModal(true);
   };
 
-  const handleReschedule = async (scheduledDateTime) => {
+  const handleReschedule = async (scheduledDateTime, addToGoogleCal) => {
     try {
       await api.updateDate(editingDate.id, {
         scheduledDate: scheduledDateTime
       });
-      showSuccess('Date rescheduled successfully!');
+
+      // Add to Google Calendar if requested
+      if (addToGoogleCal) {
+        try {
+          showInfo('Adding to Google Calendar...');
+          await addToGoogleCalendar(editingDate, scheduledDateTime);
+          showSuccess('Date rescheduled and added to Google Calendar!');
+        } catch (calError) {
+          console.error('Google Calendar error:', calError);
+          showWarning('Date rescheduled, but failed to add to Google Calendar. You may need to grant calendar permissions.');
+        }
+      } else {
+        showSuccess('Date rescheduled successfully!');
+      }
+
       setEditingDate(null);
       setShowScheduleModal(false);
       loadData();

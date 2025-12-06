@@ -286,3 +286,34 @@ This is a personal project, but suggestions and improvements are welcome!
 ---
 
 Made with ❤️ for couples who love adventure
+
+### Google Calendar Integration
+
+To enable Google Calendar integration:
+
+1. **Create a Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+
+2. **Enable Google Calendar API**:
+   - Navigate to "APIs & Services" > "Library"
+   - Search for "Google Calendar API"
+   - Click "Enable"
+
+3. **Create Credentials**:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "API Key"
+   - Copy the API key
+   - Click "Create Credentials" > "OAuth 2.0 Client ID"
+   - Configure OAuth consent screen if prompted
+   - Select "Web application" as application type
+   - Add authorized JavaScript origins:
+     - `http://localhost:5173` (for local development)
+     - Your production domain
+   - Copy the Client ID
+
+4. **Update Environment Variables**:
+   ```bash
+   VITE_GOOGLE_CLIENT_ID=your_client_id_here
+   VITE_GOOGLE_API_KEY=your_api_key_here
+   ```

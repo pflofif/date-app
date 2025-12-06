@@ -3,6 +3,7 @@ import { Shuffle, Check, X, Sparkles } from 'lucide-react';
 import { api } from '../utils/api';
 import { useToast } from '../context/ToastContext';
 import ScheduleDateModal from '../components/ScheduleDateModal';
+import { addToGoogleCalendar, initializeGoogleCalendar } from '../utils/googleCalendar';
 
 export default function Randomizer() {
   const [categories, setCategories] = useState([]);
@@ -11,10 +12,12 @@ export default function Randomizer() {
   const [loading, setLoading] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
 
   useEffect(() => {
     loadCategories();
+    // Initialize Google Calendar API
+    initializeGoogleCalendar().catch(console.error);
   }, []);
 
   const loadCategories = async () => {
@@ -63,13 +66,27 @@ export default function Randomizer() {
     setShowScheduleModal(true);
   };
 
-  const handleSchedule = async (scheduledDateTime) => {
+  const handleSchedule = async (scheduledDateTime, addToGoogleCal) => {
     try {
       await api.updateDate(randomDate.id, {
         status: 'planned',
         scheduledDate: scheduledDateTime
       });
-      showSuccess('Date scheduled successfully!');
+
+      // Add to Google Calendar if requested
+      if (addToGoogleCal) {
+        try {
+          showInfo('Adding to Google Calendar...');
+          await addToGoogleCalendar(randomDate, scheduledDateTime);
+          showSuccess('Date scheduled and added to Google Calendar!');
+        } catch (calError) {
+          console.error('Google Calendar error:', calError);
+          showWarning('Date scheduled, but failed to add to Google Calendar. You may need to grant calendar permissions.');
+        }
+      } else {
+        showSuccess('Date scheduled successfully!');
+      }
+
       setRandomDate(null);
       setSelectedCategories([]);
       setShowScheduleModal(false);
@@ -106,8 +123,8 @@ export default function Randomizer() {
                   key={cat.id}
                   onClick={() => toggleCategory(cat.id)}
                   className={`p-4 rounded-lg border-2 transition-all text-left ${selectedCategories.includes(cat.id)
-                      ? 'border-primary-600 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary-600 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   <div className="flex items-center justify-between">

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar } from 'lucide-react';
+import { X, Calendar, Plus } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
 export default function ScheduleDateModal({ date, onSchedule, onClose }) {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [addToGoogleCal, setAddToGoogleCal] = useState(false);
   const { showWarning } = useToast();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
       ? `${scheduledDate}T${scheduledTime}:00`
       : `${scheduledDate}T12:00:00`;
 
-    onSchedule(new Date(dateTimeString).toISOString());
+    onSchedule(new Date(dateTimeString).toISOString(), addToGoogleCal);
   };
 
   return (
@@ -83,6 +84,23 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
               onChange={(e) => setScheduledTime(e.target.value)}
               className="input-field"
             />
+          </div>
+
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+            <input
+              type="checkbox"
+              id="addToGoogleCal"
+              checked={addToGoogleCal}
+              onChange={(e) => setAddToGoogleCal(e.target.checked)}
+              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 cursor-pointer"
+            />
+            <label
+              htmlFor="addToGoogleCal"
+              className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add to Google Calendar
+            </label>
           </div>
 
           <div className="flex gap-3 pt-4">
