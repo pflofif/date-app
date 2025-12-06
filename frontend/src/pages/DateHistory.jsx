@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { RotateCcw, Calendar } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 export default function DateHistory() {
   const [usedDates, setUsedDates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     loadData();
@@ -32,10 +34,11 @@ export default function DateHistory() {
 
     try {
       await api.updateDate(id, { status: 'idle', scheduledDate: null });
+      showSuccess('Date reset and returned to library');
       loadData();
     } catch (error) {
       console.error('Error resetting date:', error);
-      alert('Failed to reset date');
+      showError('Failed to reset date');
     }
   };
 
@@ -81,13 +84,13 @@ export default function DateHistory() {
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
-                
+
                 {date.description && (
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                     {date.description}
                   </p>
                 )}
-                
+
                 <div className="flex flex-wrap gap-2 text-xs mb-3">
                   <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded-full">
                     {category?.name || 'Unknown'}
@@ -101,7 +104,7 @@ export default function DateHistory() {
                     {date.author}
                   </span>
                 </div>
-                
+
                 <div className="text-xs text-gray-500 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   Added {formatDate(date.createdAt)}

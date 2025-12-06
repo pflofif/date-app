@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function ScheduleDateModal({ date, onSchedule, onClose }) {
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const { showWarning } = useToast();
 
   useEffect(() => {
     // Pre-fill with existing scheduled date if editing
@@ -18,16 +20,16 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!scheduledDate) {
-      alert('Please select a date');
+      showWarning('Please select a date');
       return;
     }
 
-    const dateTimeString = scheduledTime 
+    const dateTimeString = scheduledTime
       ? `${scheduledDate}T${scheduledTime}:00`
       : `${scheduledDate}T12:00:00`;
-    
+
     onSchedule(new Date(dateTimeString).toISOString());
   };
 

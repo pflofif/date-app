@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { X, Sparkles, Loader2, Heart, RefreshCw, Plus } from 'lucide-react';
 import { api } from '../utils/api';
 import { useUser } from '../context/UserContext';
+import { useToast } from '../context/ToastContext';
 
 export default function AISuggestionModal({ categories, onClose, onSelectDate, onDatesAdded }) {
   const { currentUser } = useUser();
+  const { showSuccess, showError, showWarning } = useToast();
   const [formData, setFormData] = useState({
     mood: '',
     activityLevel: 'moderate',
@@ -92,7 +94,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
 
   const handleAddSelectedDates = async () => {
     if (selectedSuggestions.size === 0) {
-      alert('Please select at least one date to add');
+      showWarning('Please select at least one date to add');
       return;
     }
 
@@ -130,7 +132,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
         });
       }
 
-      alert(`Added ${selectedItems.length} date(s) to your library!`);
+      showSuccess(`Added ${selectedItems.length} date(s) to your library!`);
       setSelectedSuggestions(new Set());
       setSuggestions(null);
 
@@ -142,7 +144,7 @@ export default function AISuggestionModal({ categories, onClose, onSelectDate, o
       onClose();
     } catch (error) {
       console.error('Error adding dates:', error);
-      alert('Failed to add some dates. Please try again.');
+      showError('Failed to add some dates. Please try again.');
     } finally {
       setAddingDates(false);
     }

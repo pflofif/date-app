@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 export default function CategoryModal({ categories, onClose }) {
   const [editingCategory, setEditingCategory] = useState(null);
@@ -11,6 +12,7 @@ export default function CategoryModal({ categories, onClose }) {
     subCategories: '',
   });
   const [loading, setLoading] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   const handleEdit = (category) => {
     setEditingCategory(category);
@@ -29,18 +31,19 @@ export default function CategoryModal({ categories, onClose }) {
 
     try {
       await api.deleteCategory(id);
+      showSuccess('Category deleted successfully');
       onClose();
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert('Failed to delete category');
+      showError('Failed to delete category');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.type) {
-      alert('Name and type are required');
+      showWarning('Name and type are required');
       return;
     }
 
@@ -60,17 +63,19 @@ export default function CategoryModal({ categories, onClose }) {
 
       if (editingCategory) {
         await api.updateCategory(editingCategory.id, payload);
+        showSuccess('Category updated successfully!');
       } else {
         await api.createCategory(payload);
+        showSuccess('Category created successfully!');
       }
-      
+
       setShowForm(false);
       setEditingCategory(null);
       setFormData({ name: '', type: 'Outdoors', subCategories: '' });
       onClose();
     } catch (error) {
       console.error('Error saving category:', error);
-      alert('Failed to save category');
+      showError('Failed to save category');
     } finally {
       setLoading(false);
     }

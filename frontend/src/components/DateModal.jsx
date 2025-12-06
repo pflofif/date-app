@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 
 export default function DateModal({ date, categories, currentUser, onClose }) {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ export default function DateModal({ date, categories, currentUser, onClose }) {
     author: currentUser,
   });
   const [loading, setLoading] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     if (date) {
@@ -29,9 +31,9 @@ export default function DateModal({ date, categories, currentUser, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title || !formData.category) {
-      alert('Title and category are required');
+      showWarning('Title and category are required');
       return;
     }
 
@@ -39,13 +41,15 @@ export default function DateModal({ date, categories, currentUser, onClose }) {
     try {
       if (date) {
         await api.updateDate(date.id, formData);
+        showSuccess('Date idea updated successfully!');
       } else {
         await api.createDate(formData);
+        showSuccess('Date idea created successfully!');
       }
       onClose();
     } catch (error) {
       console.error('Error saving date:', error);
-      alert('Failed to save date idea');
+      showError('Failed to save date idea');
     } finally {
       setLoading(false);
     }

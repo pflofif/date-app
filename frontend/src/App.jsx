@@ -7,6 +7,7 @@ import DateHistory from './pages/DateHistory';
 import UpcomingDates from './pages/UpcomingDates';
 import AISuggestionModal from './components/AISuggestionModal';
 import { UserContext, useUser } from './context/UserContext';
+import { ToastProvider } from './context/ToastContext';
 import { api } from './utils/api';
 
 function App() {
@@ -36,32 +37,34 @@ function App() {
 
   return (
     <UserContext.Provider value={{ currentUser, setCurrentUser }}>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <Header
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-            onOpenAI={() => setShowAIModal(true)}
-          />
-          <main className="flex-1 pb-20 md:pb-8">
-            <Routes>
-              <Route path="/" element={<DateLibrary key={refreshTrigger} />} />
-              <Route path="/randomizer" element={<Randomizer />} />
-              <Route path="/upcoming" element={<UpcomingDates />} />
-              <Route path="/history" element={<DateHistory />} />
-            </Routes>
-          </main>
-          <BottomNav onOpenAI={() => setShowAIModal(true)} />
-        </div>
+      <ToastProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col">
+            <Header
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
+              onOpenAI={() => setShowAIModal(true)}
+            />
+            <main className="flex-1 pb-20 md:pb-8">
+              <Routes>
+                <Route path="/" element={<DateLibrary key={refreshTrigger} />} />
+                <Route path="/randomizer" element={<Randomizer />} />
+                <Route path="/upcoming" element={<UpcomingDates />} />
+                <Route path="/history" element={<DateHistory />} />
+              </Routes>
+            </main>
+            <BottomNav onOpenAI={() => setShowAIModal(true)} />
+          </div>
 
-        {showAIModal && (
-          <AISuggestionModal
-            categories={categories}
-            onClose={() => setShowAIModal(false)}
-            onDatesAdded={handleDatesAdded}
-          />
-        )}
-      </Router>
+          {showAIModal && (
+            <AISuggestionModal
+              categories={categories}
+              onClose={() => setShowAIModal(false)}
+              onDatesAdded={handleDatesAdded}
+            />
+          )}
+        </Router>
+      </ToastProvider>
     </UserContext.Provider>
   );
 }
