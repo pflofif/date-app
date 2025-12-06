@@ -6,6 +6,7 @@ A mobile-first web application for couples to track date ideas and randomly sele
 
 - **Date Library**: Manage all your date ideas with full CRUD operations
 - **Smart Randomizer**: Select categories and spin for a surprise date
+- **AI Date Suggester**: Get personalized date suggestions based on your mood, energy level, and preferences using AI
 - **History Tracking**: View completed dates and reset them back to the pool
 - **Category Management**: Add, edit, and delete custom categories
 - **User Tracking**: Track which partner added each date idea
@@ -16,6 +17,7 @@ A mobile-first web application for couples to track date ideas and randomly sele
 - **Frontend**: React 18 + Vite, Tailwind CSS, Lucide React (icons)
 - **Backend**: Node.js + Express
 - **Database**: LowDB (JSON file-based)
+- **AI**: Groq API
 - **Deployment**: Docker + Docker Compose
 
 ## Quick Start
@@ -24,16 +26,25 @@ A mobile-first web application for couples to track date ideas and randomly sele
 
 1. **Prerequisites**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-2. **Run the application**:
+2. **Set up environment variables**:
+   ```bash
+   # Copy the example env file
+   cp .env.example .env
+   
+   # Edit .env and add your Groq API key
+   # Get a free key at: https://console.groq.com/keys
+   ```
+
+3. **Run the application**:
    ```bash
    docker-compose up --build
    ```
 
-3. **Access the app**:
+4. **Access the app**:
    - Frontend: http://localhost:8080
    - Backend API: http://localhost:3000
 
-4. **Stop the application**:
+5. **Stop the application**:
    ```bash
    docker-compose down
    ```
@@ -42,19 +53,28 @@ A mobile-first web application for couples to track date ideas and randomly sele
 
 1. **Prerequisites**: Install [Node.js](https://nodejs.org/) (v20 or higher)
 
-2. **Install dependencies**:
+2. **Set up environment variables**:
+   ```bash
+   # Copy the example env file
+   cp .env.example .env
+   
+   # Edit .env and add your Groq API key
+   # Get a free key at: https://console.groq.com/keys
+   ```
+
+3. **Install dependencies**:
    ```bash
    # Install all dependencies
    npm run install:all
    ```
 
-3. **Start backend** (in one terminal):
+4. **Start backend** (in one terminal):
    ```bash
    cd backend
    npm run dev
    ```
 
-4. **Start frontend** (in another terminal):
+5. **Start frontend** (in another terminal):
    ```bash
    cd frontend
    npm run dev
