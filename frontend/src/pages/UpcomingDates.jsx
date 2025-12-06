@@ -3,6 +3,7 @@ import { Calendar, Check, CalendarClock, Pencil, X } from 'lucide-react';
 import { api } from '../utils/api';
 import { useToast } from '../context/ToastContext';
 import ScheduleDateModal from '../components/ScheduleDateModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function UpcomingDates() {
   const [plannedDates, setPlannedDates] = useState([]);
@@ -10,6 +11,12 @@ export default function UpcomingDates() {
   const [loading, setLoading] = useState(true);
   const [editingDate, setEditingDate] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    type: null, // 'complete' or 'cancel'
+    dateId: null,
+    dateTitle: ''
+  });
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
@@ -40,29 +47,38 @@ export default function UpcomingDates() {
     }
   };
 
-  const handleMarkAsDone = async (id) => {
-    if (!confirm('Mark this date as completed?')) return;
-
-    try {
-      await api.updateDate(id, { status: 'completed' });
-      showSuccess('Date marked as completed!');
-      loadData();
-    } catch (error) {
-      console.error('Error marking date as done:', error);
-      showError('Failed to mark date as completed');
-    }
+  const handleMarkAsDone = (date) => {
+    setConfirmationModal({
+      isOpen: true,
+      type: 'complete',
+      dateId: date.id,
+      dateTitle: date.title
+    });
   };
 
-  const handleCancelSchedule = async (id) => {
-    if (!confirm('Cancel this scheduled date? It will go back to available pool.')) return;
+  const handleCancelSchedule = (date) => {
+    setConfirmationModal({
+      isOpen: true,
+      type: 'cancel',
+      dateId: date.id,
+      dateTitle: date.title
+    });
+  };
 
+  const confirmAction = async () => {
     try {
-      await api.updateDate(id, { status: 'idle', scheduledDate: null });
-      showSuccess('Date canceled and returned to library');
+      if (confirmationModal.type === 'complete') {
+        await api.updateDate(confirmationModal.dateId, { status: 'completed' });
+        showSuccess('Date marked as completed!');
+      } else if (confirmationModal.type === 'cancel') {
+        await api.updateDate(confirmationModal.dateId, { status: 'idle', scheduledDate: null });
+        showSuccess('Date canceled and returned to library');
+      }
+      setConfirmationModal({ isOpen: false, type: null, dateId: null, dateTitle: '' });
       loadData();
     } catch (error) {
-      console.error('Error canceling date:', error);
-      showError('Failed to cancel scheduled date');
+      console.error('Error updating date:', error);
+      showError(`Failed to ${confirmationModal.type === 'complete' ? 'mark date as completed' : 'cancel scheduled date'}`);
     }
   };
 
@@ -195,7 +211,7 @@ export default function UpcomingDates() {
                       <span className="hidden sm:inline">Reschedule</span>
                     </button>
                     <button
-                      onClick={() => handleCancelSchedule(date.id)}
+                      onClick={() => handleCancelSchedule(date)}
                       className="btn-secondary flex items-center gap-2 whitespace-nowrap"
                       title="Cancel and move back to available"
                     >
@@ -203,7 +219,7 @@ export default function UpcomingDates() {
                       <span className="hidden sm:inline">Cancel</span>
                     </button>
                     <button
-                      onClick={() => handleMarkAsDone(date.id)}
+                      onClick={() => handleMarkAsDone(date)}
                       className="btn-primary flex items-center gap-2 whitespace-nowrap"
                     >
                       <Check className="w-4 h-4" />
@@ -227,6 +243,21 @@ export default function UpcomingDates() {
           }}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        title={confirmationModal.type === 'complete' ? 'Mark as Completed' : 'Cancel Scheduled Date'}
+        message={
+          confirmationModal.type === 'complete'
+            ? `Mark "${confirmationModal.dateTitle}" as completed? It will be moved to your history.`
+            : `Cancel "${confirmationModal.dateTitle}" and return it to the available pool?`
+        }
+        confirmText={confirmationModal.type === 'complete' ? 'Mark Complete' : 'Cancel Date'}
+        cancelText="Go Back"
+        variant={confirmationModal.type === 'complete' ? 'warning' : 'warning'}
+        onConfirm={confirmAction}
+        onCancel={() => setConfirmationModal({ isOpen: false, type: null, dateId: null, dateTitle: '' })}
+      />
     </div>
   );
 }
