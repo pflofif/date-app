@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Check, CalendarClock, Pencil, X } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 import ScheduleDateModal from '../components/ScheduleDateModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function UpcomingDates() {
   const [plannedDates, setPlannedDates] = useState([]);
@@ -9,6 +11,13 @@ export default function UpcomingDates() {
   const [loading, setLoading] = useState(true);
   const [editingDate, setEditingDate] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    type: null, // 'complete' or 'cancel'
+    dateId: null,
+    dateTitle: ''
+  });
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     loadData();
@@ -21,14 +30,14 @@ export default function UpcomingDates() {
         api.getDates({ status: 'planned' }),
         api.getCategories(),
       ]);
-      
+
       // Sort by scheduled date (soonest first)
       const sorted = datesData.sort((a, b) => {
         if (!a.scheduledDate) return 1;
         if (!b.scheduledDate) return -1;
         return new Date(a.scheduledDate) - new Date(b.scheduledDate);
       });
-      
+
       setPlannedDates(sorted);
       setCategories(categoriesData);
     } catch (error) {
@@ -38,27 +47,38 @@ export default function UpcomingDates() {
     }
   };
 
-  const handleMarkAsDone = async (id) => {
-    if (!confirm('Mark this date as completed?')) return;
-
-    try {
-      await api.updateDate(id, { status: 'completed' });
-      loadData();
-    } catch (error) {
-      console.error('Error marking date as done:', error);
-      alert('Failed to mark date as completed');
-    }
+  const handleMarkAsDone = (date) => {
+    setConfirmationModal({
+      isOpen: true,
+      type: 'complete',
+      dateId: date.id,
+      dateTitle: date.title
+    });
   };
 
-  const handleCancelSchedule = async (id) => {
-    if (!confirm('Cancel this scheduled date? It will go back to available pool.')) return;
+  const handleCancelSchedule = (date) => {
+    setConfirmationModal({
+      isOpen: true,
+      type: 'cancel',
+      dateId: date.id,
+      dateTitle: date.title
+    });
+  };
 
+  const confirmAction = async () => {
     try {
-      await api.updateDate(id, { status: 'idle', scheduledDate: null });
+      if (confirmationModal.type === 'complete') {
+        await api.updateDate(confirmationModal.dateId, { status: 'completed' });
+        showSuccess('Date marked as completed!');
+      } else if (confirmationModal.type === 'cancel') {
+        await api.updateDate(confirmationModal.dateId, { status: 'idle', scheduledDate: null });
+        showSuccess('Date canceled and returned to library');
+      }
+      setConfirmationModal({ isOpen: false, type: null, dateId: null, dateTitle: '' });
       loadData();
     } catch (error) {
-      console.error('Error canceling date:', error);
-      alert('Failed to cancel scheduled date');
+      console.error('Error updating date:', error);
+      showError(`Failed to ${confirmationModal.type === 'complete' ? 'mark date as completed' : 'cancel scheduled date'}`);
     }
   };
 
@@ -69,42 +89,43 @@ export default function UpcomingDates() {
 
   const handleReschedule = async (scheduledDateTime) => {
     try {
-      await api.updateDate(editingDate.id, { 
+      await api.updateDate(editingDate.id, {
         scheduledDate: scheduledDateTime
       });
+      showSuccess('Date rescheduled successfully!');
       setEditingDate(null);
       setShowScheduleModal(false);
       loadData();
     } catch (error) {
       console.error('Error rescheduling date:', error);
-      alert('Failed to reschedule date');
+      showError('Failed to reschedule date');
     }
   };
 
   const formatDateTime = (dateString) => {
     if (!dateString) return 'Not scheduled';
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
-    
+
     const dateStr = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     });
-    
+
     const timeStr = date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });
-    
+
     let badge = '';
     if (diffDays === 0) badge = '🔥 Today';
     else if (diffDays === 1) badge = '⭐ Tomorrow';
     else if (diffDays < 7) badge = `📅 In ${diffDays} days`;
     else if (diffDays < 0) badge = '⚠️ Overdue';
-    
+
     return { dateStr, timeStr, badge, isPast: diffDays < 0 };
   };
 
@@ -130,10 +151,10 @@ export default function UpcomingDates() {
           {plannedDates.map((date) => {
             const category = categories.find(c => c.id === date.category);
             const { dateStr, timeStr, badge, isPast } = formatDateTime(date.scheduledDate);
-            
+
             return (
-              <div 
-                key={date.id} 
+              <div
+                key={date.id}
                 className={`card hover:shadow-md transition-shadow ${isPast ? 'border-l-4 border-red-500' : 'border-l-4 border-primary-500'}`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -146,24 +167,23 @@ export default function UpcomingDates() {
                             {date.title}
                           </h3>
                           {badge && (
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              isPast ? 'bg-red-100 text-red-700' : 'bg-primary-100 text-primary-700'
-                            }`}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isPast ? 'bg-red-100 text-red-700' : 'bg-primary-100 text-primary-700'
+                              }`}>
                               {badge}
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="text-sm text-gray-600 mb-2">
                           <div className="font-medium">{dateStr} at {timeStr}</div>
                         </div>
-                        
+
                         {date.description && (
                           <p className="text-sm text-gray-600 mb-3">
                             {date.description}
                           </p>
                         )}
-                        
+
                         <div className="flex flex-wrap gap-2 text-xs">
                           <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded-full">
                             {category?.name || 'Unknown'}
@@ -180,7 +200,7 @@ export default function UpcomingDates() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEditSchedule(date)}
@@ -191,7 +211,7 @@ export default function UpcomingDates() {
                       <span className="hidden sm:inline">Reschedule</span>
                     </button>
                     <button
-                      onClick={() => handleCancelSchedule(date.id)}
+                      onClick={() => handleCancelSchedule(date)}
                       className="btn-secondary flex items-center gap-2 whitespace-nowrap"
                       title="Cancel and move back to available"
                     >
@@ -199,7 +219,7 @@ export default function UpcomingDates() {
                       <span className="hidden sm:inline">Cancel</span>
                     </button>
                     <button
-                      onClick={() => handleMarkAsDone(date.id)}
+                      onClick={() => handleMarkAsDone(date)}
                       className="btn-primary flex items-center gap-2 whitespace-nowrap"
                     >
                       <Check className="w-4 h-4" />
@@ -223,6 +243,21 @@ export default function UpcomingDates() {
           }}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        title={confirmationModal.type === 'complete' ? 'Mark as Completed' : 'Cancel Scheduled Date'}
+        message={
+          confirmationModal.type === 'complete'
+            ? `Mark "${confirmationModal.dateTitle}" as completed? It will be moved to your history.`
+            : `Cancel "${confirmationModal.dateTitle}" and return it to the available pool?`
+        }
+        confirmText={confirmationModal.type === 'complete' ? 'Mark Complete' : 'Cancel Date'}
+        cancelText="Go Back"
+        variant={confirmationModal.type === 'complete' ? 'warning' : 'warning'}
+        onConfirm={confirmAction}
+        onCancel={() => setConfirmationModal({ isOpen: false, type: null, dateId: null, dateTitle: '' })}
+      />
     </div>
   );
 }

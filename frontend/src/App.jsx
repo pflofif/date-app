@@ -1,12 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Heart, BookHeart, Shuffle, History, CalendarClock, Sparkles } from 'lucide-react';
+import * as DarkReader from 'darkreader';
 import DateLibrary from './pages/DateLibrary';
 import Randomizer from './pages/Randomizer';
 import DateHistory from './pages/DateHistory';
 import UpcomingDates from './pages/UpcomingDates';
 import AISuggestionModal from './components/AISuggestionModal';
 import { UserContext, useUser } from './context/UserContext';
+import { ToastProvider } from './context/ToastContext';
 import { api } from './utils/api';
 
 function App() {
@@ -18,6 +20,38 @@ function App() {
 
   useEffect(() => {
     loadCategories();
+
+    // Initialize dark mode based on system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (prefersDark) {
+      DarkReader.enable({
+        brightness: 100,
+        contrast: 90,
+        sepia: 0,
+      });
+    }
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e) => {
+      if (e.matches) {
+        DarkReader.enable({
+          brightness: 100,
+          contrast: 90,
+          sepia: 0,
+        });
+      } else {
+        DarkReader.disable();
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleThemeChange);
+
+    // Cleanup
+    return () => {
+      mediaQuery.removeEventListener('change', handleThemeChange);
+    };
   }, []);
 
   const loadCategories = async () => {
@@ -36,32 +70,34 @@ function App() {
 
   return (
     <UserContext.Provider value={{ currentUser, setCurrentUser }}>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <Header
-            mobileMenuOpen={mobileMenuOpen}
-            setMobileMenuOpen={setMobileMenuOpen}
-            onOpenAI={() => setShowAIModal(true)}
-          />
-          <main className="flex-1 pb-20 md:pb-8">
-            <Routes>
-              <Route path="/" element={<DateLibrary key={refreshTrigger} />} />
-              <Route path="/randomizer" element={<Randomizer />} />
-              <Route path="/upcoming" element={<UpcomingDates />} />
-              <Route path="/history" element={<DateHistory />} />
-            </Routes>
-          </main>
-          <BottomNav onOpenAI={() => setShowAIModal(true)} />
-        </div>
+      <ToastProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col">
+            <Header
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
+              onOpenAI={() => setShowAIModal(true)}
+            />
+            <main className="flex-1 pb-20 md:pb-8">
+              <Routes>
+                <Route path="/" element={<DateLibrary key={refreshTrigger} />} />
+                <Route path="/randomizer" element={<Randomizer />} />
+                <Route path="/upcoming" element={<UpcomingDates />} />
+                <Route path="/history" element={<DateHistory />} />
+              </Routes>
+            </main>
+            <BottomNav onOpenAI={() => setShowAIModal(true)} />
+          </div>
 
-        {showAIModal && (
-          <AISuggestionModal
-            categories={categories}
-            onClose={() => setShowAIModal(false)}
-            onDatesAdded={handleDatesAdded}
-          />
-        )}
-      </Router>
+          {showAIModal && (
+            <AISuggestionModal
+              categories={categories}
+              onClose={() => setShowAIModal(false)}
+              onDatesAdded={handleDatesAdded}
+            />
+          )}
+        </Router>
+      </ToastProvider>
     </UserContext.Provider>
   );
 }

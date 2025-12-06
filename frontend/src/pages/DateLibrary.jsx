@@ -4,9 +4,12 @@ import { api } from '../utils/api';
 import { useUser } from '../context/UserContext';
 import DateModal from '../components/DateModal';
 import CategoryModal from '../components/CategoryModal';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { useToast } from '../context/ToastContext';
 
 export default function DateLibrary() {
   const { currentUser } = useUser();
+  const { showSuccess } = useToast();
   const [dates, setDates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,10 +18,11 @@ export default function DateLibrary() {
     author: '',
     status: '',
   });
-  
+
   const [showDateModal, setShowDateModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingDate, setEditingDate] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, dateId: null, dateTitle: '' });
 
   useEffect(() => {
     loadData();
@@ -41,10 +45,19 @@ export default function DateLibrary() {
   };
 
   const handleDeleteDate = async (id) => {
-    if (!confirm('Are you sure you want to delete this date idea?')) return;
-    
+    const date = dates.find(d => d.id === id);
+    setDeleteConfirmation({
+      isOpen: true,
+      dateId: id,
+      dateTitle: date?.title || 'this date idea'
+    });
+  };
+
+  const confirmDelete = async () => {
     try {
-      await api.deleteDate(id);
+      await api.deleteDate(deleteConfirmation.dateId);
+      showSuccess(`Date idea "${deleteConfirmation.dateTitle}" deleted`);
+      setDeleteConfirmation({ isOpen: false, dateId: null, dateTitle: '' });
       loadData();
     } catch (error) {
       console.error('Error deleting date:', error);
@@ -176,13 +189,13 @@ export default function DateLibrary() {
                     </button>
                   </div>
                 </div>
-                
+
                 {date.description && (
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                     {date.description}
                   </p>
                 )}
-                
+
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded-full">
                     {category?.name || 'Unknown'}
@@ -221,7 +234,7 @@ export default function DateLibrary() {
           onClose={handleCloseModal}
         />
       )}
-      
+
       {showCategoryModal && (
         <CategoryModal
           categories={categories}
@@ -231,6 +244,17 @@ export default function DateLibrary() {
           }}
         />
       )}
+
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        title="Delete Date Idea"
+        message={`Are you sure you want to delete "${deleteConfirmation.dateTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirmation({ isOpen: false, dateId: null, dateTitle: '' })}
+      />
     </div>
   );
 }

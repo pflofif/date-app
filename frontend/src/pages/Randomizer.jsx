@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shuffle, Check, X, Sparkles } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from '../context/ToastContext';
 import ScheduleDateModal from '../components/ScheduleDateModal';
 
 export default function Randomizer() {
@@ -10,6 +11,7 @@ export default function Randomizer() {
   const [loading, setLoading] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     loadCategories();
@@ -34,7 +36,7 @@ export default function Randomizer() {
 
   const handleSpin = async () => {
     if (selectedCategories.length === 0) {
-      alert('Please select at least one category');
+      showWarning('Please select at least one category');
       return;
     }
 
@@ -48,7 +50,7 @@ export default function Randomizer() {
         const date = await api.getRandomDate(selectedCategories);
         setRandomDate(date);
       } catch (error) {
-        alert(error.message || 'No available dates found with selected categories');
+        showError(error.message || 'No available dates found with selected categories');
       } finally {
         setLoading(false);
         setSpinning(false);
@@ -63,17 +65,17 @@ export default function Randomizer() {
 
   const handleSchedule = async (scheduledDateTime) => {
     try {
-      await api.updateDate(randomDate.id, { 
+      await api.updateDate(randomDate.id, {
         status: 'planned',
         scheduledDate: scheduledDateTime
       });
-      alert('Date scheduled successfully!');
+      showSuccess('Date scheduled successfully!');
       setRandomDate(null);
       setSelectedCategories([]);
       setShowScheduleModal(false);
     } catch (error) {
       console.error('Error scheduling date:', error);
-      alert('Failed to schedule date');
+      showError('Failed to schedule date');
     }
   };
 
@@ -103,11 +105,10 @@ export default function Randomizer() {
                 <button
                   key={cat.id}
                   onClick={() => toggleCategory(cat.id)}
-                  className={`p-4 rounded-lg border-2 transition-all text-left ${
-                    selectedCategories.includes(cat.id)
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${selectedCategories.includes(cat.id)
                       ? 'border-primary-600 bg-primary-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -155,13 +156,13 @@ export default function Randomizer() {
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
               {randomDate.title}
             </h3>
-            
+
             {randomDate.description && (
               <p className="text-gray-600 mb-4 whitespace-pre-wrap">
                 {randomDate.description}
               </p>
             )}
-            
+
             <div className="flex flex-wrap gap-2 justify-center mb-6">
               <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
                 {category?.name || 'Unknown'}

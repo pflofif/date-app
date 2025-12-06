@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { RotateCcw, Calendar } from 'lucide-react';
 import { api } from '../utils/api';
+import { useToast } from '../context/ToastContext';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function DateHistory() {
   const [usedDates, setUsedDates] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resetConfirmation, setResetConfirmation] = useState({ isOpen: false, dateId: null, dateTitle: '' });
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     loadData();
@@ -27,15 +31,23 @@ export default function DateHistory() {
     }
   };
 
-  const handleReset = async (id) => {
-    if (!confirm('Reset this date back to available pool?')) return;
+  const handleReset = (date) => {
+    setResetConfirmation({
+      isOpen: true,
+      dateId: date.id,
+      dateTitle: date.title
+    });
+  };
 
+  const confirmReset = async () => {
     try {
-      await api.updateDate(id, { status: 'idle', scheduledDate: null });
+      await api.updateDate(resetConfirmation.dateId, { status: 'idle', scheduledDate: null });
+      showSuccess('Date reset and returned to library');
+      setResetConfirmation({ isOpen: false, dateId: null, dateTitle: '' });
       loadData();
     } catch (error) {
       console.error('Error resetting date:', error);
-      alert('Failed to reset date');
+      showError('Failed to reset date');
     }
   };
 
@@ -74,20 +86,20 @@ export default function DateHistory() {
                     {date.title}
                   </h3>
                   <button
-                    onClick={() => handleReset(date.id)}
+                    onClick={() => handleReset(date)}
                     className="p-1.5 text-gray-600 hover:text-primary-600 rounded ml-2"
                     title="Reset to available"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
-                
+
                 {date.description && (
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                     {date.description}
                   </p>
                 )}
-                
+
                 <div className="flex flex-wrap gap-2 text-xs mb-3">
                   <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded-full">
                     {category?.name || 'Unknown'}
@@ -101,7 +113,7 @@ export default function DateHistory() {
                     {date.author}
                   </span>
                 </div>
-                
+
                 <div className="text-xs text-gray-500 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   Added {formatDate(date.createdAt)}
@@ -111,6 +123,17 @@ export default function DateHistory() {
           })}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={resetConfirmation.isOpen}
+        title="Reset Date"
+        message={`Are you sure you want to reset "${resetConfirmation.dateTitle}" back to the available pool?`}
+        confirmText="Reset"
+        cancelText="Cancel"
+        variant="warning"
+        onConfirm={confirmReset}
+        onCancel={() => setResetConfirmation({ isOpen: false, dateId: null, dateTitle: '' })}
+      />
     </div>
   );
 }
