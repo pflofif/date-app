@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ScheduleDateModal({ date, onSchedule, onClose }) {
+  const { t, getLocalizedField } = useLanguage();
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const { showWarning } = useToast();
@@ -22,7 +24,7 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
     e.preventDefault();
 
     if (!scheduledDate) {
-      showWarning('Please select a date');
+      showWarning(t('errors.selectDate'));
       return;
     }
 
@@ -40,7 +42,7 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary-600" />
             <h3 className="text-xl font-bold text-gray-900">
-              {date.scheduledDate ? 'Reschedule Date' : 'Schedule Date'}
+              {date.scheduledDate ? t('scheduleModal.rescheduleDate') : t('scheduleModal.scheduleDate')}
             </h3>
           </div>
           <button
@@ -53,15 +55,15 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="bg-primary-50 rounded-lg p-4 mb-4">
-            <h4 className="font-semibold text-gray-900 mb-1">{date.title}</h4>
-            {date.description && (
-              <p className="text-sm text-gray-600">{date.description}</p>
+            <h4 className="font-semibold text-gray-900 mb-1">{getLocalizedField(date, 'title')}</h4>
+            {getLocalizedField(date, 'description') && (
+              <p className="text-sm text-gray-600">{getLocalizedField(date, 'description')}</p>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date *
+              {t('scheduleModal.date')} *
             </label>
             <input
               type="date"
@@ -75,7 +77,7 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Time (optional)
+              {t('scheduleModal.time')}
             </label>
             <input
               type="time"
@@ -91,13 +93,13 @@ export default function ScheduleDateModal({ date, onSchedule, onClose }) {
               onClick={onClose}
               className="btn-secondary flex-1"
             >
-              Cancel
+              {t('confirmation.cancel')}
             </button>
             <button
               type="submit"
               className="btn-primary flex-1"
             >
-              {date.scheduledDate ? 'Update' : 'Schedule'}
+              {date.scheduledDate ? t('scheduleModal.update') : t('scheduleModal.schedule')}
             </button>
           </div>
         </form>

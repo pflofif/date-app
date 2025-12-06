@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Filter, Settings, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../utils/api';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import DateModal from '../components/DateModal';
 import CategoryModal from '../components/CategoryModal';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -9,6 +10,7 @@ import { useToast } from '../context/ToastContext';
 
 export default function DateLibrary() {
   const { currentUser } = useUser();
+  const { t, getLocalizedField, language } = useLanguage();
   const { showSuccess } = useToast();
   const [dates, setDates] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -49,14 +51,14 @@ export default function DateLibrary() {
     setDeleteConfirmation({
       isOpen: true,
       dateId: id,
-      dateTitle: date?.title || 'this date idea'
+      dateTitle: getLocalizedField(date, 'title') || t('confirmationModal.deleteDateIdea')
     });
   };
 
   const confirmDelete = async () => {
     try {
       await api.deleteDate(deleteConfirmation.dateId);
-      showSuccess(`Date idea "${deleteConfirmation.dateTitle}" deleted`);
+      showSuccess(t('toast.dateDeleted'));
       setDeleteConfirmation({ isOpen: false, dateId: null, dateTitle: '' });
       loadData();
     } catch (error) {
@@ -80,21 +82,21 @@ export default function DateLibrary() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Date Library</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('dateLibrary.title')}</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowCategoryModal(true)}
             className="btn-secondary flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
-            Categories
+            {t('dateLibrary.categories')}
           </button>
           <button
             onClick={() => setShowDateModal(true)}
             className="btn-primary flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
-            Add Date
+            {t('dateLibrary.addDate')}
           </button>
         </div>
       </div>
@@ -103,53 +105,53 @@ export default function DateLibrary() {
       <div className="card mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gray-600" />
-          <h3 className="font-semibold text-gray-900">Filters</h3>
+          <h3 className="font-semibold text-gray-900">{t('dateLibrary.filters')}</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
+              {t('dateModal.category')}
             </label>
             <select
               value={filters.category}
               onChange={(e) => setFilters({ ...filters, category: e.target.value })}
               className="input-field"
             >
-              <option value="">All Categories</option>
+              <option value="">{t('dateLibrary.allCategories')}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name}
+                  {getLocalizedField(cat, 'name')}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Author
+              {t('dateModal.addedBy')}
             </label>
             <select
               value={filters.author}
               onChange={(e) => setFilters({ ...filters, author: e.target.value })}
               className="input-field"
             >
-              <option value="">Both Users</option>
-              <option value="User 1">User 1</option>
-              <option value="User 2">User 2</option>
+              <option value="">{t('dateLibrary.bothUsers')}</option>
+              <option value="User 1">{t('header.user1')}</option>
+              <option value="User 2">{t('header.user2')}</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              {t('dateLibrary.filters')}
             </label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
               className="input-field"
             >
-              <option value="">All</option>
-              <option value="idle">Available</option>
-              <option value="planned">Scheduled</option>
-              <option value="completed">Completed</option>
+              <option value="">{t('dateLibrary.all')}</option>
+              <option value="idle">{t('dateLibrary.available')}</option>
+              <option value="planned">{t('dateLibrary.scheduled')}</option>
+              <option value="completed">{t('dateLibrary.completed')}</option>
             </select>
           </div>
         </div>
@@ -162,7 +164,7 @@ export default function DateLibrary() {
         </div>
       ) : filteredDates.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">No date ideas found. Add your first one!</p>
+          <p className="text-gray-500">{t('dateLibrary.noDatesFound')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -172,7 +174,7 @@ export default function DateLibrary() {
               <div key={date.id} className="card hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold text-lg text-gray-900 flex-1">
-                    {date.title}
+                    {getLocalizedField(date, 'title')}
                   </h3>
                   <div className="flex gap-1 ml-2">
                     <button
@@ -190,19 +192,19 @@ export default function DateLibrary() {
                   </div>
                 </div>
 
-                {date.description && (
+                {getLocalizedField(date, 'description') && (
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {date.description}
+                    {getLocalizedField(date, 'description')}
                   </p>
                 )}
 
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded-full">
-                    {category?.name || 'Unknown'}
+                    {getLocalizedField(category, 'name') || t('categoryModal.other')}
                   </span>
-                  {date.subCategory && (
+                  {getLocalizedField(date, 'subCategory') && (
                     <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
-                      {date.subCategory}
+                      {getLocalizedField(date, 'subCategory')}
                     </span>
                   )}
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
@@ -210,12 +212,12 @@ export default function DateLibrary() {
                   </span>
                   {date.status === 'planned' && (
                     <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                      Scheduled
+                      {t('dateLibrary.scheduled')}
                     </span>
                   )}
                   {date.status === 'completed' && (
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
-                      Completed
+                      {t('dateLibrary.completed')}
                     </span>
                   )}
                 </div>
@@ -247,10 +249,10 @@ export default function DateLibrary() {
 
       <ConfirmationModal
         isOpen={deleteConfirmation.isOpen}
-        title="Delete Date Idea"
-        message={`Are you sure you want to delete "${deleteConfirmation.dateTitle}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('confirmationModal.deleteDateIdea')}
+        message={`${t('confirmation.areYouSureDelete')} "${deleteConfirmation.dateTitle}"? ${t('confirmation.actionCannotBeUndone')}`}
+        confirmText={t('confirmationModal.delete')}
+        cancelText={t('dateModal.cancel')}
         variant="danger"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirmation({ isOpen: false, dateId: null, dateTitle: '' })}
